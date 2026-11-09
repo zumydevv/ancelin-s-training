@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ancelin Training</title>
+  <meta name="description" content="Programme salle et nutrition d'Ancelin">
+  <meta name="theme-color" content="#0f1115">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Training">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 id="title">Training</h1>
+  </header>
+
+  <main id="view"></main>
+
+  <div id="rest" class="rest hidden" role="timer" aria-live="polite">
+    <div class="rest-bar"><div id="rest-fill"></div></div>
+    <div class="rest-row">
+      <span class="rest-label">Repos</span>
+      <strong id="rest-time">0:00</strong>
+      <button data-rest="-15" class="chip">−15 s</button>
+      <button data-rest="15" class="chip">+15 s</button>
+      <button data-rest="stop" class="chip" aria-label="Arrêter le minuteur">✕</button>
+    </div>
+  </div>
+
+  <nav class="tabbar">
+    <a href="#/" data-tab="today"><span class="ico">◉</span>Aujourd'hui</a>
+    <a href="#/programme" data-tab="programme"><span class="ico">▤</span>Programme</a>
+    <a href="#/nutrition" data-tab="nutrition"><span class="ico">◍</span>Nutrition</a>
+    <a href="#/suivi" data-tab="suivi"><span class="ico">↗</span>Suivi</a>
+  </nav>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
