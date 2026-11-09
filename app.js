@@ -398,7 +398,8 @@
           <summary>Créer le raccourci « Mes pas » (une seule fois)</summary>
           <ol class="small" style="padding-left:18px;margin:8px 0 0">
             <li>Ouvre l'appli <b>Raccourcis</b>, puis touche <b>+</b>.</li>
-            <li>Ajoute l'action <b>Rechercher des échantillons de santé</b>. Règle : Type = <b>Nombre de pas</b>, Date de début = <b>Aujourd'hui</b>, Regrouper par = <b>Jour</b>.</li>
+            <li>Ajoute l'action <b>Rechercher des échantillons de santé</b>. Règle : Type = <b>Nombre de pas</b> (ou <b>Steps</b>), Date de début = <b>est aujourd'hui</b>, Grouper par = <b>Jour</b>.</li>
+            <li>Ajoute l'action <b>Obtenir les détails des échantillons de santé</b> et choisis <b>Valeur</b>.</li>
             <li>Ajoute l'action <b>Copier dans le presse-papiers</b>.</li>
             <li>Nomme le raccourci <b>Mes pas</b>. Ajoute-le à l'écran d'accueil ou en widget, et autorise l'accès à Santé la première fois.</li>
           </ol>
