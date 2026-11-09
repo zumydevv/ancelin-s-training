@@ -145,7 +145,8 @@ window.PLAN = {
       "En masse, environ 8 000 pas par jour : bon pour la santé et la récupération, sans brûler les calories que tu essaies de prendre.",
       "En sèche, vise 10 000 pas ou plus. C'est le moyen le plus simple de brûler 300 à 400 kcal de plus par jour sans fatiguer tes séances.",
       "Le compteur en direct marche seulement quand l'appli est ouverte, avec l'écran allumé (téléphone en main ou dans la poche). Une appli web ne peut pas compter en arrière-plan.",
-      "Pour le total de toute la journée, recopie le chiffre de l'appli Santé (iPhone) ou Google Fit (Android) : elles comptent en permanence.",
+      "Pour le total de toute la journée, le plus fiable est le raccourci « Mes pas » : il récupère les vrais pas d'Apple Santé (iPhone et Apple Watch), puis tu les colles ici d'un bouton.",
+      "Une appli web n'a pas le droit de lire Apple Santé directement : Apple réserve ça aux applis de l'App Store. Le raccourci fait le pont entre les deux.",
     ],
   },
 
