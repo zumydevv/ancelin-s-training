@@ -116,7 +116,7 @@ puis ouvrir http://localhost:8000.
 
 | Phase | Calories | Protéines | Glucides | Lipides | Rythme visé |
 | --- | --- | --- | --- | --- | --- |
-| Prise de masse | ~3000 kcal | 175 g | 370 g | 80 g | +0,3 à +0,5 kg / semaine |
+| Prise de masse | ~3000 kcal | 175 g | 385 g | 80 g | +0,3 à +0,5 kg / semaine |
 | Sèche | ~2300 kcal | 180 g | 260 g | 55 g | -0,5 à -0,75 kg / semaine |
 
 Les repas types de chaque phase sont dans l'appli (onglet Nutrition). On ajuste avec la moyenne de poids de la semaine : si elle stagne 2 semaines en masse, +200 kcal ; si elle monte de plus de 0,7 kg par semaine, -200 kcal.

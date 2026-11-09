@@ -1,6 +1,6 @@
 // Service worker : rend l'appli utilisable hors-ligne.
 // Pense à changer VERSION à chaque mise à jour pour que les téléphones récupèrent la nouvelle version.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `ancelin-training-${VERSION}`;
 const FILES = [
   './',
