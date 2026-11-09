@@ -92,9 +92,9 @@
     return n ? Math.round(sum / n) : null;
   }
 
-  function progressBar(value, max) {
+  function progressBar(value, max, overIsBad = true) {
     const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
-    return `<div class="progress ${value > max * 1.08 ? 'over' : ''}"><div style="width:${pct}%"></div></div>`;
+    return `<div class="progress ${overIsBad && value > max * 1.08 ? 'over' : ''}"><div style="width:${pct}%"></div></div>`;
   }
 
   const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -170,7 +170,7 @@
         <div class="row between"><h3>👟 Pas du jour</h3><span class="muted small">${ped.on ? '<span style="color:var(--accent)">● compteur actif</span>' : 'objectif ' + fmt(stepsGoal(), 0)}</span></div>
         <div class="stack">
           <div class="row between small"><span>Pas</span><span><b data-steps-today>${fmt(stepsOn(), 0)}</b> / ${fmt(stepsGoal(), 0)}</span></div>
-          ${progressBar(stepsOn(), stepsGoal())}
+          ${progressBar(stepsOn(), stepsGoal(), false)}
         </div>
       </div>
 
@@ -373,7 +373,7 @@
           <div class="kpi"><div class="v" data-steps-today>${fmt(today, 0)}</div><div class="l">pas aujourd'hui</div></div>
           <div class="kpi"><div class="v">${fmt(goal, 0)}</div><div class="l">objectif (${esc(phase().label.toLowerCase())})</div></div>
         </div>
-        <div style="margin-top:12px">${progressBar(today, goal)}</div>
+        <div style="margin-top:12px">${progressBar(today, goal, false)}</div>
         <p class="muted small" style="margin:8px 0 0">${today >= goal ? 'Objectif atteint 🔥' : `Encore ${fmt(goal - today, 0)} pas`}${avg != null ? ` · moyenne 7 jours : ${fmt(avg, 0)}` : ''}</p>
       </div>
 
@@ -391,8 +391,19 @@
       </div>
 
       <div class="card">
-        <h3>Total de la journée</h3>
-        <p class="muted small">Recopie le nombre de pas affiché dans l'appli Santé (iPhone) ou Google Fit (Android). Il remplace le total du jour.</p>
+        <h3>Total de la journée (Apple Santé)</h3>
+        <p class="muted small">Lance ton raccourci « Mes pas » : il copie tes vrais pas Apple. Reviens ici et appuie sur le bouton. Le chiffre remplace le total du jour.</p>
+        <button class="btn block" data-action="paste-steps">📋 Coller mes pas Apple</button>
+        <details class="tip">
+          <summary>Créer le raccourci « Mes pas » (une seule fois)</summary>
+          <ol class="small" style="padding-left:18px;margin:8px 0 0">
+            <li>Ouvre l'appli <b>Raccourcis</b>, puis touche <b>+</b>.</li>
+            <li>Ajoute l'action <b>Rechercher des échantillons de santé</b>. Règle : Type = <b>Nombre de pas</b> (ou <b>Steps</b>), Date de début = <b>est aujourd'hui</b>, Grouper par = <b>Jour</b>, Fichier manquant désactivé.</li>
+            <li>Ajoute l'action <b>Copier dans le presse-papiers</b>, touche le mot bleu <b>Échantillons de Santé</b> et choisis <b>Valeur</b>. L'action doit afficher « Copier Valeur dans le presse-papier ».</li>
+            <li>Nomme le raccourci <b>Mes pas</b>. Ajoute-le à l'écran d'accueil ou en widget, et autorise l'accès à Santé la première fois.</li>
+          </ol>
+        </details>
+        <p class="muted small" style="margin:12px 0 6px">Ou tape le chiffre à la main (Santé, Google Fit…) :</p>
         <form class="row" data-form="steps">
           <input type="number" name="steps" inputmode="numeric" min="0" max="100000" placeholder="Ex : 8450" required>
           <button class="btn sm" type="submit">OK</button>
@@ -654,6 +665,7 @@
     'del-workout': (el) => { if (confirm('Supprimer cette séance de l’historique ?')) { S.workouts.splice(+el.dataset.i, 1); save(); rerender(); } },
     'ped-start': startPedometer,
     'ped-stop': stopPedometer,
+    'paste-steps': pasteSteps,
     export: exportData,
     reset: () => {
       if (confirm('Effacer TOUTES tes données (séances, poids, repas) ?') && confirm('Sûr ? Impossible de revenir en arrière.')) {
@@ -835,6 +847,32 @@
     save();
     if (ped.count) toast(`${fmt(ped.count, 0)} pas ajoutés`);
     rerender();
+  }
+
+  // Lit le nombre de pas copié par le raccourci Apple « Mes pas ».
+  // Accepte « 8450 », « 8 450 », « 8450,0 », « 8,450 »…
+  function parseSteps(text) {
+    const t = String(text || '').replace(/[\s  ]/g, '');
+    const m = t.match(/\d+(?:[.,]\d+)*/);
+    if (!m) return null;
+    let s = m[0];
+    if (/^\d{1,3}([.,]\d{3})+$/.test(s)) s = s.replace(/[.,]/g, ''); // séparateurs de milliers
+    const n = Math.round(parseFloat(s.replace(',', '.')));
+    return Number.isFinite(n) && n >= 0 && n <= 100000 ? n : null;
+  }
+  async function pasteSteps() {
+    let text = null;
+    try { text = await navigator.clipboard.readText(); } catch (e) { text = null; }
+    if (text == null) {
+      toast('Colle le nombre dans le champ en dessous (appui long puis Coller)');
+      const input = document.querySelector('form[data-form=steps] input');
+      if (input) input.focus();
+      return;
+    }
+    const n = parseSteps(text);
+    if (n == null) { toast("Pas de nombre de pas dans le presse-papiers : lance d'abord le raccourci « Mes pas »"); return; }
+    S.steps[dayKey()] = n;
+    save(); toast(`${fmt(n, 0)} pas importés depuis Apple Santé`); rerender();
   }
 
   // Garder l'écran allumé pendant la séance ou le comptage de pas (si le navigateur le permet)
