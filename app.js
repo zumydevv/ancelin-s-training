@@ -30,7 +30,7 @@
   // ------------------------------------------------------------------
   // Stockage (localStorage, sur le téléphone)
   // ------------------------------------------------------------------
-  const defaults = () => ({ version: 1, workouts: [], active: null, weights: [], food: {}, settings: { phase: 'masse', phaseStartWeight: null } });
+  const defaults = () => ({ version: 1, workouts: [], active: null, weights: [], food: {}, steps: {}, settings: { phase: 'masse', phaseStartWeight: null } });
   let S = load();
 
   function load() {
@@ -82,6 +82,14 @@
     phase().meals.forEach((m) => { if (d.meals[m.id]) { t.kcal += m.kcal; t.p += m.p; t.g += m.g; t.l += m.l; } });
     d.extras.forEach((x) => { t.kcal += x.kcal || 0; t.p += x.p || 0; });
     return t;
+  }
+
+  const stepsGoal = () => P.steps.goals[S.settings.phase] || P.steps.goals.masse;
+  const stepsOn = (key = dayKey()) => S.steps[key] || 0;
+  function stepsAvg7() {
+    let sum = 0, n = 0;
+    for (let i = 0; i < 7; i++) { const v = S.steps[daysAgoKey(i)]; if (v) { sum += v; n++; } }
+    return n ? Math.round(sum / n) : null;
   }
 
   function progressBar(value, max) {
@@ -155,6 +163,14 @@
           ${progressBar(tot.kcal, ph.targets.kcal)}
           <div class="row between small"><span>Protéines</span><span><b>${fmt(tot.p, 0)}</b> / ${ph.targets.p} g</span></div>
           ${progressBar(tot.p, ph.targets.p)}
+        </div>
+      </div>
+
+      <div class="card tap" data-action="go" data-href="#/pas">
+        <div class="row between"><h3>👟 Pas du jour</h3><span class="muted small">${ped.on ? '<span style="color:var(--accent)">● compteur actif</span>' : 'objectif ' + fmt(stepsGoal(), 0)}</span></div>
+        <div class="stack">
+          <div class="row between small"><span>Pas</span><span><b data-steps-today>${fmt(stepsOn(), 0)}</b> / ${fmt(stepsGoal(), 0)}</span></div>
+          ${progressBar(stepsOn(), stepsGoal())}
         </div>
       </div>
 
@@ -322,6 +338,75 @@
     `;
   }
 
+  function stepsChart() {
+    const goal = stepsGoal();
+    const days = Array.from({ length: 14 }, (_, i) => daysAgoKey(13 - i));
+    const vals = days.map((d) => stepsOn(d));
+    if (!vals.some((v) => v > 0)) return '<p class="muted small" style="margin:0">Le graphique des 14 derniers jours apparaîtra ici.</p>';
+    const max = Math.max(goal * 1.2, ...vals);
+    const W = 300, H = 140, bw = W / days.length;
+    const y = (v) => H - (v / max) * (H - 10);
+    const bars = days.map((d, i) => {
+      const v = vals[i];
+      const h = H - y(v);
+      const [yy, mm, dd] = d.split('-').map(Number);
+      const letter = 'DLMMJVS'[new Date(yy, mm - 1, dd).getDay()];
+      return `<rect x="${(i * bw + 3).toFixed(1)}" y="${y(v).toFixed(1)}" width="${(bw - 6).toFixed(1)}" height="${Math.max(0, h).toFixed(1)}" rx="3" fill="${v >= goal ? '#c8f04a' : '#5f6878'}"/>
+        <text x="${(i * bw + bw / 2).toFixed(1)}" y="${H + 12}" fill="#9aa3b2" font-size="9" text-anchor="middle">${letter}</text>`;
+    }).join('');
+    const gy = y(goal).toFixed(1);
+    return `<svg class="chart" viewBox="0 0 ${W} ${H + 16}" role="img" aria-label="Pas des 14 derniers jours">
+      ${bars}
+      <line x1="0" x2="${W}" y1="${gy}" y2="${gy}" stroke="#c8f04a" stroke-dasharray="4 4" stroke-width="1" opacity=".7"/>
+      <text x="${W - 2}" y="${gy - 4}" fill="#c8f04a" font-size="10" text-anchor="end">objectif ${fmt(goal, 0)}</text>
+    </svg>`;
+  }
+
+  function viewSteps() {
+    const today = stepsOn();
+    const goal = stepsGoal();
+    const avg = stepsAvg7();
+    return `
+      <h2>Pas</h2>
+      <div class="card">
+        <div class="kpis">
+          <div class="kpi"><div class="v" data-steps-today>${fmt(today, 0)}</div><div class="l">pas aujourd'hui</div></div>
+          <div class="kpi"><div class="v">${fmt(goal, 0)}</div><div class="l">objectif (${esc(phase().label.toLowerCase())})</div></div>
+        </div>
+        <div style="margin-top:12px">${progressBar(today, goal)}</div>
+        <p class="muted small" style="margin:8px 0 0">${today >= goal ? 'Objectif atteint 🔥' : `Encore ${fmt(goal - today, 0)} pas`}${avg != null ? ` · moyenne 7 jours : ${fmt(avg, 0)}` : ''}</p>
+      </div>
+
+      <div class="card ${ped.on ? 'accent' : ''}">
+        <h3>Compteur en direct</h3>
+        ${ped.on ? `
+          <p class="muted small">Garde l'appli ouverte, l'écran reste allumé. Téléphone en main ou dans la poche.</p>
+          <div style="font-size:44px;font-weight:800;letter-spacing:-0.02em" data-steps-live>${fmt(ped.count, 0)}</div>
+          <p class="muted small">pas pendant cette marche, ajoutés automatiquement au total du jour</p>
+          <button class="btn danger block" data-action="ped-stop">Arrêter</button>
+        ` : `
+          <p class="muted small">Utilise le capteur de mouvement du téléphone. Pratique pour une marche ou du tapis : lance-le, mets le téléphone dans ta poche, l'écran reste allumé.</p>
+          <button class="btn block" data-action="ped-start">▶ Démarrer le compteur</button>
+        `}
+      </div>
+
+      <div class="card">
+        <h3>Total de la journée</h3>
+        <p class="muted small">Recopie le nombre de pas affiché dans l'appli Santé (iPhone) ou Google Fit (Android). Il remplace le total du jour.</p>
+        <form class="row" data-form="steps">
+          <input type="number" name="steps" inputmode="numeric" min="0" max="100000" placeholder="Ex : 8450" required>
+          <button class="btn sm" type="submit">OK</button>
+        </form>
+      </div>
+
+      <div class="section-title">14 derniers jours</div>
+      <div class="card">${stepsChart()}</div>
+
+      <div class="section-title">À savoir</div>
+      <div class="card"><ul class="bullets">${P.steps.tips.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>
+    `;
+  }
+
   function weightChart() {
     const w = weightsSorted().slice(-90);
     if (w.length < 2) return '<p class="muted small">Note ton poids quelques jours pour voir la courbe.</p>';
@@ -404,6 +489,11 @@
         </form>
       </div>
 
+      <div class="section-title">Pas</div>
+      <div class="card tap" data-action="go" data-href="#/pas">
+        <div class="row between"><span>Aujourd'hui : <b>${fmt(stepsOn(), 0)}</b> / ${fmt(stepsGoal(), 0)}${stepsAvg7() != null ? `<br><span class="muted small">moyenne 7 jours : ${fmt(stepsAvg7(), 0)}</span>` : ''}</span><span class="muted">›</span></div>
+      </div>
+
       <div class="section-title">Records (1RM estimé)</div>
       <div class="card">${records ? `<ul class="list-plain">${records}</ul>` : '<p class="muted small" style="margin:0">Tes records apparaîtront après ta première séance.</p>'}</div>
 
@@ -441,6 +531,7 @@
         html = parts[1] ? viewSessionDetail(parts[1]) : viewProgram(); tab = 'programme'; title = 'Programme'; break;
       case 'nutrition': html = viewNutrition(); tab = 'nutrition'; title = 'Nutrition'; break;
       case 'suivi': html = viewProgress(); tab = 'suivi'; title = 'Suivi'; break;
+      case 'pas': html = viewSteps(); tab = 'suivi'; title = 'Pas'; break;
       default: html = viewToday(); title = `Salut ${P.athlete.name} 👋`;
     }
     view.innerHTML = html;
@@ -561,6 +652,8 @@
     'toggle-meal': (el) => { const d = foodDay(); d.meals[el.dataset.id] = !d.meals[el.dataset.id]; save(); rerender(); },
     'del-extra': (el) => { foodDay().extras.splice(+el.dataset.i, 1); save(); rerender(); },
     'del-workout': (el) => { if (confirm('Supprimer cette séance de l’historique ?')) { S.workouts.splice(+el.dataset.i, 1); save(); rerender(); } },
+    'ped-start': startPedometer,
+    'ped-stop': stopPedometer,
     export: exportData,
     reset: () => {
       if (confirm('Effacer TOUTES tes données (séances, poids, repas) ?') && confirm('Sûr ? Impossible de revenir en arrière.')) {
@@ -603,6 +696,12 @@
     e.preventDefault();
     const data = new FormData(f);
     if (f.dataset.form === 'weight') setWeight(data.get('kg'));
+    if (f.dataset.form === 'steps') {
+      const n = num(data.get('steps'));
+      if (n == null || n < 0 || n > 100000) { toast('Nombre de pas invalide'); return; }
+      S.steps[dayKey()] = Math.round(n);
+      save(); toast(`Pas notés : ${fmt(n, 0)}`); rerender();
+    }
     if (f.dataset.form === 'extra') {
       const kcal = num(data.get('kcal'));
       if (kcal == null) return;
@@ -679,10 +778,69 @@
   }
   setInterval(() => { tick(); updateElapsed(); }, 250);
 
-  // Garder l'écran allumé pendant la séance (si le navigateur le permet)
+  // ------------------------------------------------------------------
+  // Compteur de pas (capteur de mouvement, appli ouverte)
+  // ------------------------------------------------------------------
+  // Détection de pics sur la norme de l'accélération : on lisse le signal,
+  // on suit la gravité avec un filtre lent, et chaque pic net au-dessus de
+  // cette base (espacé d'au moins 280 ms) compte pour un pas.
+  const ped = { on: false, count: 0, smooth: null, base: null, above: false, last: 0, events: 0 };
+  function pedReset() {
+    Object.assign(ped, { count: 0, smooth: null, base: null, above: false, last: 0, events: 0 });
+  }
+  function onMotion(e) {
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x == null) return;
+    ped.events++;
+    const m = Math.hypot(a.x, a.y, a.z);
+    if (ped.smooth == null) { ped.smooth = m; ped.base = m; return; }
+    ped.smooth += (m - ped.smooth) * 0.3;
+    ped.base += (ped.smooth - ped.base) * 0.02;
+    const d = ped.smooth - ped.base;
+    const t = performance.now();
+    if (!ped.above && d > 1.0 && t - ped.last > 280) {
+      ped.above = true;
+      ped.last = t;
+      ped.count++;
+      const k = dayKey();
+      S.steps[k] = (S.steps[k] || 0) + 1;
+      if (ped.count % 10 === 0) save();
+      document.querySelectorAll('[data-steps-live]').forEach((el) => { el.textContent = fmt(ped.count, 0); });
+      document.querySelectorAll('[data-steps-today]').forEach((el) => { el.textContent = fmt(S.steps[k], 0); });
+    } else if (ped.above && d < 0.2) {
+      ped.above = false;
+    }
+  }
+  async function startPedometer() {
+    if (ped.on) return;
+    if (typeof DeviceMotionEvent === 'undefined') { toast("Ce téléphone ne donne pas accès au capteur de mouvement"); return; }
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      try {
+        const r = await DeviceMotionEvent.requestPermission();
+        if (r !== 'granted') { toast('Autorise « Mouvements et orientation » pour compter les pas'); return; }
+      } catch (e) { toast('Accès au capteur refusé'); return; }
+    }
+    pedReset();
+    ped.on = true;
+    window.addEventListener('devicemotion', onMotion);
+    rerender();
+    setTimeout(() => {
+      if (ped.on && ped.events === 0) { stopPedometer(); toast('Aucun capteur de mouvement détecté sur cet appareil'); }
+    }, 3000);
+  }
+  function stopPedometer() {
+    if (!ped.on) return;
+    window.removeEventListener('devicemotion', onMotion);
+    ped.on = false;
+    save();
+    if (ped.count) toast(`${fmt(ped.count, 0)} pas ajoutés`);
+    rerender();
+  }
+
+  // Garder l'écran allumé pendant la séance ou le comptage de pas (si le navigateur le permet)
   let wakeLock = null;
   async function manageWakeLock() {
-    const want = !!S.active && location.hash === '#/seance' && document.visibilityState === 'visible';
+    const want = document.visibilityState === 'visible' && ((!!S.active && location.hash === '#/seance') || ped.on);
     try {
       if (want && !wakeLock && 'wakeLock' in navigator) {
         wakeLock = await navigator.wakeLock.request('screen');

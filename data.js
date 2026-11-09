@@ -139,6 +139,16 @@ window.PLAN = {
     { title: 'Si tu n’as que 4 jours', text: "Supprime Jambes B et ajoute le soulevé de terre roumain (3 × 6-8) au début de Jambes A." },
   ],
 
+  steps: {
+    goals: { masse: 8000, seche: 10000 },
+    tips: [
+      "En masse, environ 8 000 pas par jour : bon pour la santé et la récupération, sans brûler les calories que tu essaies de prendre.",
+      "En sèche, vise 10 000 pas ou plus. C'est le moyen le plus simple de brûler 300 à 400 kcal de plus par jour sans fatiguer tes séances.",
+      "Le compteur en direct marche seulement quand l'appli est ouverte, avec l'écran allumé (téléphone en main ou dans la poche). Une appli web ne peut pas compter en arrière-plan.",
+      "Pour le total de toute la journée, recopie le chiffre de l'appli Santé (iPhone) ou Google Fit (Android) : elles comptent en permanence.",
+    ],
+  },
+
   nutrition: {
     phases: {
       masse: {
